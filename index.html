@@ -1,441 +1,337 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ahorcado Espacial</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --panel-bg: #f4f4f4;
+    --border-color: #ccc;
+    --cube-container-bg: #eee;
+    --button-bg: #4CAF50;
+    --button-hover: #45a049;
+    --button-text: #ffffff;
+  }
 
-        body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            color: #fff;
-        }
+  [data-theme="dark"] {
+    --bg-color: #1a1a1a;
+    --text-color: #ffffff;
+    --panel-bg: #2d2d2d;
+    --border-color: #444;
+    --cube-container-bg: #333;
+    --button-bg: #2d5e30;
+    --button-hover: #1e4021;
+    --button-text: #ffffff;
+  }
 
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .game-layout {
-            display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 30px;
-            align-items: start;
-        }
-
-        .game-left {
-            background: linear-gradient(45deg, #0d1b2a, #1b263b);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-        }
-
-        .game-right {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        #ahorcado {
-            width: 100%;
-            height: auto;
-        }
-
-        .titulo {
-            font-size: 32px;
-            margin-bottom: 30px;
-            text-align: center;
-            color: #00ff88;
-            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-        }
-
-        #palabra {
-            background: rgba(26, 26, 46, 0.5);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .letra {
-            font-size: 35px;
-            font-family: 'Courier New', monospace;
-            color: #00ff88;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-            margin: 0 5px;
-        }
-
-        #teclado {
-            display: grid;
-            grid-template-columns: repeat(9, 1fr);
-            gap: 8px;
-            padding: 20px;
-            background: rgba(26, 26, 46, 0.5);
-            border-radius: 15px;
-        }
-
-        #teclado button {
-            aspect-ratio: 1;
-            background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
-            border: none;
-            color: #fff;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-
-        #teclado button:hover {
-            transform: translateY(-2px);
-            background: linear-gradient(145deg, #3a3a6a, #2a2a5a);
-            box-shadow: 0 6px 12px rgba(0, 255, 255, 0.2);
-        }
-
-        #teclado button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Media Queries */
-        @media (max-width: 1200px) {
-            .container {
-                max-width: 900px;
-            }
-            
-            .game-layout {
-                grid-template-columns: 350px 1fr;
-                gap: 20px;
-            }
-
-            #teclado {
-                grid-template-columns: repeat(7, 1fr);
-            }
-        }
-
-        @media (max-width: 900px) {
-            .container {
-                padding: 10px;
-            }
-
-            .game-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .game-left {
-                max-width: 400px;
-                margin: 0 auto;
-            }
-
-            #teclado {
-                grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-            }
-        }
-
-        .sound-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 1000;
-            padding: 10px;
-            border-radius: 50%;
-            background: rgba(26, 26, 46, 0.5);
-            transition: all 0.3s ease;
-        }
-
-        .sound-toggle:hover {
-            transform: scale(1.1);
-            background: rgba(26, 26, 46, 0.8);
-        }
-
-        .boton-musica {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: linear-gradient(145deg, #00ff88, #00cc6a);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 1000;
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .boton-musica:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
-        }
-
-        @keyframes flotar {
-            0% { transform: translateY(0) rotate(0deg); }
-            25% { transform: translateY(-5px) rotate(5deg); }
-            50% { transform: translateY(0) rotate(0deg); }
-            75% { transform: translateY(5px) rotate(-5deg); }
-            100% { transform: translateY(0) rotate(0deg); }
-        }
-
-        .musica-activa {
-            animation: flotar 2s infinite ease-in-out;
-        }
-
-        .icono-musica {
-            display: inline-block;
-            transition: all 0.3s ease;
-        }
-    </style>
+  body {
+    display: flex;
+    align-items: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  .container {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .panel {
+    width: 250px;
+    padding: 20px;
+    background-color: var(--panel-bg);
+    border-right: 1px solid var(--border-color);
+  }
+  .cube-container {
+    width: 650px;
+    height: 650px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--cube-container-bg);
+    border: 1px solid var(--border-color);
+  }
+  .cube {
+    width: 200px;
+    height: 200px;
+    background-color: #3498db;
+    opacity: 0.7;
+    border: 1px solid #2980b9;
+    border-radius: 10px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+    transform: rotate(0.3s);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    position: relative;
+  }
+  .cube::after {
+    content: attr(data-size) " | Borde: " attr(data-border) "px | Radio: " attr(data-radius) "px | Rotación: " attr(data-rotation) "°";
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: var(--text-color);
+    white-space: nowrap;
+  }
+  .code-container {
+    width: 250px;
+    padding: 20px;
+    background-color: var(--panel-bg);
+    border-left: 1px solid var(--border-color);
+  }
+  .code {
+    font-family: monospace;
+    white-space: pre;
+    overflow: auto;
+    height: 250px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+  }
+  .input-value {
+    font-size: 12px;
+    margin-left: 5px;
+  }
+  input[type="range"] {
+    width: 100%;
+    margin: 10px 0;
+  }
+  input[type="number"] {
+    width: 60px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+  input[type="text"] {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+  }
+  .theme-switch {
+    margin: 10px;
+    padding: 8px 15px;
+    background-color: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--text-color);
+  }
+  .action-button {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    width: 100%;
+    transition: background-color 0.3s;
+  }
+  .action-button:hover {
+    background-color: var(--button-hover);
+  }
+</style>
+<title>Programa de Creación de Cubos</title>
 </head>
 <body>
-    <audio id="musicaFondo" loop>
-        <source src="https://www.cjoint.com/doc/24_11/NKfcVZWvDDd_Molotov---Marciano-I-Turned-Into-A-Martian---MolotovVEVO-youtube-.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="soundClick" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="soundSuccess" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="soundError" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="soundWin" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" type="audio/mpeg">
-    </audio>
-    <audio id="soundLose" preload="auto">
-        <source src="https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" type="audio/mpeg">
-    </audio>
-
-    <button id="toggleSound" class="sound-toggle">
-        <span class="sound-on">🔊</span>
-        <span class="sound-off" style="display: none">🔇</span>
-    </button>
-
-    <div class="container">
-        <h1 class="titulo">Ahorcado Espacial</h1>
-        
-        <div class="game-layout">
-            <div class="game-left">
-                <svg id="ahorcado" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                    <!-- Base espacial -->
-                    <defs>
-                        <linearGradient id="baseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#357abd;stop-opacity:1" />
-                        </linearGradient>
-                        <radialGradient id="alienGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                            <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#00cc6a;stop-opacity:1" />
-                        </radialGradient>
-                    </defs>
-
-                    <!-- Plataforma espacial -->
-                    <rect x="50" y="340" width="300" height="20" fill="url(#baseGradient)" rx="5" 
-                          stroke="#6ab7ff" stroke-width="2"/>
-                    
-                    <!-- Poste principal con efecto metálico -->
-                    <rect x="90" y="100" width="20" height="240" fill="url(#baseGradient)" 
-                          stroke="#6ab7ff" stroke-width="2"/>
-                    
-                    <!-- Viga superior -->
-                    <rect x="90" y="100" width="150" height="20" fill="url(#baseGradient)" 
-                          stroke="#6ab7ff" stroke-width="2"/>
-                    
-                    <!-- Cuerda espacial -->
-                    <line x1="240" y1="120" x2="240" y2="150" stroke="#6ab7ff" stroke-width="2" 
-                          stroke-dasharray="5,5"/>
-
-                    <!-- Marciano (partes ocultas inicialmente) -->
-                    <!-- Cabeza alienígena -->
-                    <g id="cabeza" style="display: none">
-                        <ellipse cx="240" cy="170" rx="25" ry="30" fill="url(#alienGradient)" 
-                                 stroke="#00ff88" stroke-width="2"/>
-                        <!-- Ojos grandes -->
-                        <ellipse cx="230" cy="165" rx="8" ry="12" fill="black"/>
-                        <ellipse cx="250" cy="165" rx="8" ry="12" fill="black"/>
-                        <!-- Antenas -->
-                        <path d="M230 140 Q240 120 250 140" fill="none" stroke="#00ff88" stroke-width="2"/>
-                    </g>
-
-                    <!-- Cuerpo alienígena -->
-                    <g id="cuerpo" style="display: none">
-                        <path d="M240 200 L240 260 Q240 280 240 280" stroke="#00ff88" stroke-width="8" 
-                              fill="none"/>
-                    </g>
-
-                    <!-- Brazos -->
-                    <path id="brazoIzq" d="M240 220 Q200 240 190 260" stroke="#00ff88" stroke-width="6" 
-                          fill="none" style="display: none"/>
-                    <path id="brazoDer" d="M240 220 Q280 240 290 260" stroke="#00ff88" stroke-width="6" 
-                          fill="none" style="display: none"/>
-
-                    <!-- Piernas -->
-                    <path id="piernaIzq" d="M240 280 Q220 300 210 320" stroke="#00ff88" stroke-width="6" 
-                          fill="none" style="display: none"/>
-                    <path id="piernaDer" d="M240 280 Q260 300 270 320" stroke="#00ff88" stroke-width="6" 
-                          fill="none" style="display: none"/>
-                </svg>
-            </div>
-            
-            <div class="game-right">
-                <div id="palabra"></div>
-                <div id="teclado"></div>
-            </div>
-        </div>
+<div class="container">
+  <div class="panel">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h2>Panel de Cambios</h2>
+      <button class="theme-switch" onclick="toggleTheme()">Cambiar Tema</button>
     </div>
+    <label for="cubeWidth">Anchura del Cubo (px):</label>
+    <input type="number" id="cubeWidth" value="200" min="50" max="400">
+    <input type="range" id="cubeWidthRange" value="200" min="50" max="400">
+    <br>
+    <label for="cubeHeight">Altura del Cubo (px):</label>
+    <input type="number" id="cubeHeight" value="200" min="50" max="400">
+    <input type="range" id="cubeHeightRange" value="200" min="50" max="400">
+    <br>
+    <label for="cubeColor">Color del Cubo:</label>
+    <input type="color" id="cubeColor" value="#3498db">
+    <br>
+    <label for="cubeOpacity">Opacidad del Cubo (0-1):</label>
+    <input type="number" id="cubeOpacity" value="0.7" step="0.1" min="0" max="1">
+    <input type="range" id="cubeOpacityRange" value="0.7" step="0.1" min="0" max="1">
+    <br>
+    <label for="cubeBorder">Ancho del Borde (px):</label>
+    <input type="number" id="cubeBorder" value="1" min="0" max="10">
+    <input type="range" id="cubeBorderRange" value="1" min="0" max="10">
+    <br>
+    <label for="cubeBorderRadius">Radio del Borde (px):</label>
+    <input type="number" id="cubeBorderRadius" value="10" min="0" max="50">
+    <input type="range" id="cubeBorderRadiusRange" value="10" min="0" max="50">
+    <br>
+    <label for="cubeBoxShadow">Sombra del Cubo (px):</label>
+    <input type="text" id="cubeBoxShadow" value="5px 5px 15px rgba(0, 0, 0, 0.5)">
+    <br>
+    <label for="cubeRotation">Rotación del Cubo (grados):</label>
+    <input type="number" id="cubeRotation" value="0" min="0" max="360">
+    <input type="range" id="cubeRotationRange" value="0" min="0" max="360">
+    <br>
+    <button id="generateCodeBtn" class="action-button">Generar Código</button>
+  </div>
+  <div class="cube-container">
+    <div class="cube" data-size="200x200" data-border="1" data-radius="10" data-rotation="0"></div>
+  </div>
+  <div class="code-container">
+    <h2>Código Generado</h2>
+    <pre class="code" id="generatedCode"></pre>
+    <button id="copyCodeBtn" class="action-button">Copiar Código</button>
+  </div>
+</div>
+<script>
+  const cube = document.querySelector('.cube');
+  const generatedCode = document.getElementById('generatedCode');
 
-    <script>
-        const musicaFondo = document.getElementById('musicaFondo');
-        musicaFondo.volume = 0.3; // Ajustar volumen al 30%
-        
-        const botonMusica = document.createElement('button');
-        botonMusica.className = 'boton-musica';
-        const iconoMusica = document.createElement('span');
-        iconoMusica.className = 'icono-musica';
-        iconoMusica.innerHTML = '🎵';
-        botonMusica.appendChild(iconoMusica);
+  // Función para cambiar tema
+  function toggleTheme() {
+    document.documentElement.setAttribute('data-theme', 
+      document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+    );
+  }
 
-        let musicaActivada = false;
-        
-        function toggleMusica() {
-            musicaActivada = !musicaActivada;
-            if (musicaActivada) {
-                musicaFondo.play();
-                botonMusica.classList.add('musica-activa');
-                iconoMusica.innerHTML = '👽';
-            } else {
-                musicaFondo.pause();
-                botonMusica.classList.remove('musica-activa');
-                iconoMusica.innerHTML = '🎵';
-            }
-        }
-        
-        botonMusica.onclick = toggleMusica;
-        document.body.appendChild(botonMusica);
+  // Función para actualizar los atributos del cubo
+  function updateCubeAttributes() {
+    const width = cube.style.width || '200px';
+    const height = cube.style.height || '200px';
+    const border = cube.style.borderWidth || '1px';
+    const radius = cube.style.borderRadius || '10px';
+    const rotation = cube.style.transform ? cube.style.transform.match(/\d+/) || ['0'] : ['0'];
+    
+    cube.setAttribute('data-size', `${width.replace('px','')}x${height.replace('px','')}`);
+    cube.setAttribute('data-border', border.replace('px',''));
+    cube.setAttribute('data-radius', radius.replace('px',''));
+    cube.setAttribute('data-rotation', rotation[0]);
+  }
 
-        const palabras = ['GALAXIA', 'ASTRONAUTA', 'PLANETA', 'ESTRELLA', 'COMETA', 'NEBULOSA', 
-                         'SATELITE', 'COSMOS', 'METEORO', 'CONSTELACION'];
-        let palabraActual = palabras[Math.floor(Math.random() * palabras.length)];
-        let letrasAdivinadas = new Set();
-        let errores = 0;
-        const partesDelCuerpo = ['cabeza', 'cuerpo', 'brazoIzq', 'brazoDer', 'piernaIzq', 'piernaDer'];
+  // Función para copiar código
+  document.getElementById('copyCodeBtn').addEventListener('click', function() {
+    const code = generatedCode.textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      this.textContent = '¡Código Copiado!';
+      setTimeout(() => {
+        this.textContent = 'Copiar Código';
+      }, 2000);
+    });
+  });
 
-        let soundEnabled = true;
+  // Función para sincronizar inputs number y range
+  function syncInputs(numberInput, rangeInput) {
+    const value = numberInput.value;
+    rangeInput.value = value;
+    return value;
+  }
 
-        function playSound(soundId) {
-            if (!soundEnabled) return;
-            const sound = document.getElementById(soundId);
-            sound.currentTime = 0;
-            sound.play().catch(e => console.log("Error playing sound:", e));
-        }
+  // Anchura
+  document.getElementById('cubeWidth').addEventListener('input', function() {
+    const width = syncInputs(this, document.getElementById('cubeWidthRange'));
+    cube.style.width = `${width}px`;
+    updateCubeAttributes();
+  });
+  document.getElementById('cubeWidthRange').addEventListener('input', function() {
+    document.getElementById('cubeWidth').value = this.value;
+    cube.style.width = `${this.value}px`;
+    updateCubeAttributes();
+  });
 
-        document.getElementById('toggleSound').addEventListener('click', function() {
-            soundEnabled = !soundEnabled;
-            const soundOn = this.querySelector('.sound-on');
-            const soundOff = this.querySelector('.sound-off');
-            soundOn.style.display = soundEnabled ? 'block' : 'none';
-            soundOff.style.display = soundEnabled ? 'none' : 'block';
-        });
+  // Altura
+  document.getElementById('cubeHeight').addEventListener('input', function() {
+    const height = syncInputs(this, document.getElementById('cubeHeightRange'));
+    cube.style.height = `${height}px`;
+    updateCubeAttributes();
+  });
+  document.getElementById('cubeHeightRange').addEventListener('input', function() {
+    document.getElementById('cubeHeight').value = this.value;
+    cube.style.height = `${this.value}px`;
+    updateCubeAttributes();
+  });
 
-        function mostrarPalabra() {
-            const palabraDiv = document.getElementById('palabra');
-            palabraDiv.innerHTML = palabraActual
-                .split('')
-                .map(letra => `<span class="letra">${letrasAdivinadas.has(letra) ? letra : '_'}</span>`)
-                .join(' ');
-        }
+  // Color
+  document.getElementById('cubeColor').addEventListener('input', function() {
+    cube.style.backgroundColor = this.value;
+  });
 
-        function crearTeclado() {
-            const teclado = document.getElementById('teclado');
-            'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('').forEach(letra => {
-                const boton = document.createElement('button');
-                boton.textContent = letra;
-                boton.onclick = () => intentarLetra(letra, boton);
-                teclado.appendChild(boton);
-            });
-        }
+  // Opacidad
+  document.getElementById('cubeOpacity').addEventListener('input', function() {
+    const opacity = syncInputs(this, document.getElementById('cubeOpacityRange'));
+    cube.style.opacity = opacity;
+  });
+  document.getElementById('cubeOpacityRange').addEventListener('input', function() {
+    document.getElementById('cubeOpacity').value = this.value;
+    cube.style.opacity = this.value;
+  });
 
-        function intentarLetra(letra, boton) {
-            if (letrasAdivinadas.has(letra)) return;
-            
-            letrasAdivinadas.add(letra);
-            boton.disabled = true;
-            
-            playSound('soundClick');
+  // Borde
+  document.getElementById('cubeBorder').addEventListener('input', function() {
+    const border = syncInputs(this, document.getElementById('cubeBorderRange'));
+    cube.style.borderWidth = `${border}px`;
+    updateCubeAttributes();
+  });
+  document.getElementById('cubeBorderRange').addEventListener('input', function() {
+    document.getElementById('cubeBorder').value = this.value;
+    cube.style.borderWidth = `${this.value}px`;
+    updateCubeAttributes();
+  });
 
-            if (!palabraActual.includes(letra)) {
-                errores++;
-                boton.style.background = 'linear-gradient(145deg, #ff4444, #cc0000)';
-                playSound('soundError');
-                
-                if (errores <= partesDelCuerpo.length) {
-                    document.getElementById(partesDelCuerpo[errores - 1]).style.display = 'block';
-                }
-                if (errores === partesDelCuerpo.length) {
-                    playSound('soundLose');
-                    setTimeout(() => {
-                        alert('¡Game Over! La palabra era: ' + palabraActual);
-                        reiniciarJuego();
-                    }, 500);
-                }
-            } else {
-                boton.style.background = 'linear-gradient(145deg, #00ff88, #00cc6a)';
-                playSound('soundSuccess');
-                
-                if ([...palabraActual].every(l => letrasAdivinadas.has(l))) {
-                    playSound('soundWin');
-                    setTimeout(() => {
-                        alert('¡Victoria Espacial! 🚀');
-                        reiniciarJuego();
-                    }, 500);
-                }
-            }
-            mostrarPalabra();
-        }
+  // Radio del borde
+  document.getElementById('cubeBorderRadius').addEventListener('input', function() {
+    const radius = syncInputs(this, document.getElementById('cubeBorderRadiusRange'));
+    cube.style.borderRadius = `${radius}px`;
+    updateCubeAttributes();
+  });
+  document.getElementById('cubeBorderRadiusRange').addEventListener('input', function() {
+    document.getElementById('cubeBorderRadius').value = this.value;
+    cube.style.borderRadius = `${this.value}px`;
+    updateCubeAttributes();
+  });
 
-        function reiniciarJuego() {
-            palabraActual = palabras[Math.floor(Math.random() * palabras.length)];
-            letrasAdivinadas.clear();
-            errores = 0;
-            partesDelCuerpo.forEach(parte => {
-                document.getElementById(parte).style.display = 'none';
-            });
-            document.querySelectorAll('#teclado button').forEach(boton => {
-                boton.disabled = false;
-                boton.style.background = 'linear-gradient(145deg, #2a2a4a, #1a1a3a)';
-            });
-            mostrarPalabra();
-        }
+  // Sombra
+  document.getElementById('cubeBoxShadow').addEventListener('input', function() {
+    cube.style.boxShadow = this.value;
+  });
 
-        // Iniciar juego
-        crearTeclado();
-        mostrarPalabra();
-    </script>
+  // Rotación
+  document.getElementById('cubeRotation').addEventListener('input', function() {
+    const rotation = syncInputs(this, document.getElementById('cubeRotationRange'));
+    cube.style.transform = `rotate(${rotation}deg)`;
+    updateCubeAttributes();
+  });
+  document.getElementById('cubeRotationRange').addEventListener('input', function() {
+    document.getElementById('cubeRotation').value = this.value;
+    cube.style.transform = `rotate(${this.value}deg)`;
+    updateCubeAttributes();
+  });
+
+  // Generar código
+  document.getElementById('generateCodeBtn').addEventListener('click', function() {
+    const code = `
+.cube {
+  width: ${cube.style.width};
+  height: ${cube.style.height};
+  background-color: ${cube.style.backgroundColor};
+  opacity: ${cube.style.opacity};
+  border-width: ${cube.style.borderWidth};
+  border-radius: ${cube.style.borderRadius};
+  box-shadow: ${cube.style.boxShadow};
+  transform: ${cube.style.transform};
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}`;
+    generatedCode.textContent = code;
+  });
+
+  // Inicializar los atributos del cubo
+  updateCubeAttributes();
+</script>
 </body>
 </html>
-  
