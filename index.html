@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editor CSS Interactivo de Cubos</title>
+<meta name="viewport" content="width=device-width, initial-scale-1.0">
+<title>Estudio de Diseño CSS v5.0</title>
+<link id="font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto&display=swap">
+<link id="prism-theme" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.css">
 <style>
   :root {
+    --font-family: 'Roboto', sans-serif;
+    /* Light Theme Colors */
     --bg-color: #f8f9fa;
     --text-color: #212529;
     --panel-bg: #ffffff;
@@ -18,13 +22,14 @@
     --input-border: #ced4da;
     --success-bg: #28a745;
     --success-hover: #218838;
+    --details-bg: #f1f3f5;
   }
-
   [data-theme="dark"] {
+    /* Dark Theme Colors */
     --bg-color: #121212;
     --text-color: #e0e0e0;
     --panel-bg: #1e1e1e;
-    --border-color: #333;
+    --border-color: #383838;
     --cube-container-bg: #2a2a2a;
     --button-bg: #0d6efd;
     --button-hover: #0b5ed7;
@@ -33,204 +38,80 @@
     --input-border: #444;
     --success-bg: #198754;
     --success-hover: #157347;
+    --details-bg: #252525;
   }
+  
+  /* Animaciones */
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); } 20%, 40%, 60%, 80% { transform: translateX(5px); } }
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
-  body {
-    display: flex;
-    min-height: 100vh;
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+  /* Estilos base */
+  *, *::before, *::after { box-sizing: border-box; }
+  body { 
+    display: flex; height: 100vh; margin: 0; 
+    font-family: var(--font-family); 
+    background-color: var(--bg-color); 
+    color: var(--text-color); 
+    overflow: hidden;
     transition: background-color 0.3s, color 0.3s;
   }
+  .app-container { display: flex; width: 100%; height: 100vh; }
+  .panel, .code-container { width: 340px; padding: 20px; background-color: var(--panel-bg); overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; transition: background-color 0.3s; }
+  .panel { border-right: 1px solid var(--border-color); }
+  .code-container { border-left: 1px solid var(--border-color); }
+  .cube-viewport { flex-grow: 1; min-width: 320px; display: flex; align-items: center; justify-content: center; background-color: var(--cube-container-bg); perspective: 1200px; background-size: cover; background-position: center; transition: background-color 0.3s; }
+  .cube { position: relative; transition: all 0.2s ease-out; cursor: grab; transform-style: preserve-3d; display: flex; align-items: center; justify-content: center; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); padding: 10px; text-align: center; }
+  .cube:active { cursor: grabbing; }
+
+  /* Controles UI */
+  .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  h2 { margin: 0; }
+  .header-actions { display: flex; gap: 8px; }
+  .action-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background-color: var(--button-bg); color: var(--button-text); border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+  .action-button:hover:not(:disabled) { background-color: var(--button-hover); transform: translateY(-1px); }
+  .action-button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.6; }
+  .icon-button { padding: 8px; font-size: 18px; line-height: 1; flex-shrink: 0; }
+  .icon { width: 1.2em; height: 1.2em; fill: currentColor; }
   
-  .app-container {
-    display: flex;
-    width: 100%;
-    flex-wrap: wrap; /* Para responsividad */
-  }
-
-  .panel, .code-container {
-    width: 300px;
-    padding: 20px;
-    background-color: var(--panel-bg);
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-
-  .panel {
-    border-right: 1px solid var(--border-color);
-  }
-
-  .code-container {
-    border-left: 1px solid var(--border-color);
-  }
-
-  .cube-viewport {
-    flex-grow: 1;
-    min-width: 320px;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--cube-container-bg);
-    perspective: 1000px; /* Añadido para transformaciones 3D */
-  }
-
-  .cube {
-    position: relative;
-    transition: all 0.3s ease-in-out;
-  }
-
-  .cube::after {
-    content: attr(data-info);
-    position: absolute;
-    bottom: -35px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 13px;
-    color: var(--text-color);
-    white-space: nowrap;
-    background-color: var(--panel-bg);
-    padding: 3px 8px;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-
-  /* --- Controles --- */
-  .panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  .panel-header h2 {
-    margin: 0;
-  }
-  .control-group {
-    margin-bottom: 15px;
-  }
-  .control-group label {
-    display: flex;
-    justify-content: space-between;
-    font-weight: bold;
-    font-size: 14px;
-    margin-bottom: 5px;
-  }
-  .value-display {
-    font-weight: normal;
-    color: #888;
-  }
-  input[type="range"] {
-    width: 100%;
-    margin: 5px 0;
-  }
-  input[type="number"], input[type="text"], input[type="color"], select {
-    width: 100%;
-    padding: 8px;
-    background-color: var(--input-bg);
-    color: var(--text-color);
-    border: 1px solid var(--input-border);
-    border-radius: 4px;
-  }
-  .shadow-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  /* --- Botones --- */
-  .action-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    background-color: var(--button-bg);
-    color: var(--button-text);
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100%;
-    font-size: 16px;
-    transition: background-color 0.2s;
-  }
-  .action-button:hover {
-    background-color: var(--button-hover);
-  }
-  .action-button.success {
-    background-color: var(--success-bg);
-  }
-  .action-button.success:hover {
-    background-color: var(--success-hover);
-  }
-
-  .theme-switch {
-    background: none;
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-    padding: 8px;
-    border-radius: 50%;
-    cursor: pointer;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  details { background: var(--details-bg); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 12px; overflow: hidden; transition: background-color 0.3s; }
+  details[open] { background: var(--panel-bg); }
+  summary { font-weight: 600; font-size: 15px; padding: 12px 15px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;}
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '▸'; transition: transform 0.2s; }
+  details[open] summary::after { transform: rotate(90deg); }
+  .details-content { padding: 0 15px 15px 15px; border-top: 1px solid var(--border-color); }
   
-  .icon {
-    width: 20px;
-    height: 20px;
-    fill: currentColor;
-  }
-
-  /* --- Código --- */
-  .code-output {
-    font-family: "Fira Code", "Courier New", monospace;
-    font-size: 13px;
-    white-space: pre-wrap;
-    overflow: auto;
-    height: calc(100vh - 200px); /* Ajustado para más espacio */
-    border: 1px solid var(--border-color);
-    padding: 15px;
-    background-color: var(--input-bg);
-    color: var(--text-color);
-    border-radius: 5px;
-  }
-
-  /* --- Responsividad --- */
-  @media (max-width: 1024px) {
-    .app-container {
-      flex-direction: column;
-    }
-    .panel, .code-container, .cube-viewport {
-      width: 100%;
-      border: none;
-      border-bottom: 1px solid var(--border-color);
-      height: auto;
-    }
-    .cube-viewport {
-      min-height: 400px;
-    }
-  }
-
+  .control-group { margin-block: 15px; }
+  .control-group label { display: flex; justify-content: space-between; align-items: center; font-weight: 500; font-size: 14px; margin-bottom: 8px; }
+  .value-display { font-weight: normal; color: #888; background-color: var(--details-bg); padding: 2px 6px; border-radius: 4px; font-size: 12px;}
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  input, select { width: 100%; padding: 8px; background-color: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); border-radius: 4px; font-size: 14px; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+  
+  .user-presets { margin-top: auto; padding-top: 15px; border-top: 1px solid var(--border-color); }
+  
+  /* Panel de Código con Pestañas */
+  .code-tabs { display: flex; border-bottom: 1px solid var(--border-color); }
+  .code-tab { padding: 8px 12px; cursor: pointer; background: transparent; border: none; color: #888; font-weight: 500; transition: color 0.2s, border-color 0.2s;}
+  .code-tab.active { color: var(--text-color); border-bottom: 2px solid var(--button-bg); }
+  .code-output { flex-grow: 1; font-family: "Fira Code", monospace !important; font-size: 13px !important; white-space: pre-wrap; overflow: auto; border-radius: 5px; background-color: var(--input-bg); }
+  pre[class*="language-"] { background: transparent !important; color: var(--text-color) !important; text-shadow: none !important; padding: 15px; margin: 0; }
+  .code-panel { display: none; flex-grow:1; flex-direction: column; }
+  .code-panel.active { display: flex; }
+  #css-panel, #html-panel { min-height: 200px; } /* Evita que el panel colapse */
 </style>
 </head>
 <body>
-
-<!-- Iconos SVG para usar en botones -->
+<!-- SVGs -->
 <svg width="0" height="0" style="display:none;">
-  <symbol id="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></symbol>
-  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
-  <symbol id="icon-reset" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></symbol>
-  <symbol id="icon-sun" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM20 11H23V13H20zM1 11H4V13H1zM12 20V23H12V20zM12 1V4H12V1zM4.22 4.22L6.34 6.34 7.76 4.93 5.64 2.81zM17.66 17.66L19.78 19.78 21.19 18.36 19.07 16.24zM4.93 17.76L6.34 16.34 4.22 14.22 2.81 15.64zM16.24 4.93L17.66 6.34 19.78 4.22 18.36 2.81z"/></symbol>
-  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 2-.26-1.43 2.09-3.79 3.52-6.4 3.52-4.42 0-8-3.58-8-8 0-2.61 1.43-4.97 3.52-6.4z"/></symbol>
+    <symbol id="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+    <symbol id="icon-save" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM20 11H23V13H20zM1 11H4V13H1zM12 20V23H12V20zM12 1V4H12V1zM4.22 4.22L6.34 6.34 7.76 4.93 5.64 2.81zM17.66 17.66L19.78 19.78 21.19 18.36 19.07 16.24zM4.93 17.76L6.34 16.34 4.22 14.22 2.81 15.64zM16.24 4.93L17.66 6.34 19.78 4.22 18.36 2.81z"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 2-.26-1.43 2.09-3.79 3.52-6.4 3.52-4.42 0-8-3.58-8-8 0-2.61 1.43-4.97 3.52-6.4z"/></symbol>
+    <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.38 11.23 17.28 8 12.5 8z"/></symbol>
+    <symbol id="icon-redo" viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.78 0-8.88 3.23-9.87 7.5l-2.37-.78C.22 9.21 4.32 6 9.5 6c2.65 0 5.05.99 6.9 2.6L20 5v9h-9l3.4-3.4z"/></symbol>
+    <symbol id="icon-share" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"></symbol>
 </svg>
 
 <div class="app-container">
@@ -238,298 +119,534 @@
   <div class="panel">
     <div class="panel-header">
       <h2>Controles</h2>
-      <button class="theme-switch" id="theme-toggle" aria-label="Cambiar tema">
-        <svg class="icon"><use href="#icon-sun"></use></svg>
-      </button>
-    </div>
-    <div class="control-group">
-      <label for="presets">Presets</label>
-      <select id="presets">
-        <option value="default">Personalizado</option>
-        <option value="card">Tarjeta Plana</option>
-        <option value="button">Botón Suave</option>
-        <option value="gel">Efecto Gel</option>
-        <option value="neumorphic">Neumorfismo</option>
-      </select>
-    </div>
-    <div class="control-group">
-      <label for="width">Ancho <span class="value-display" id="width-value">200px</span></label>
-      <input type="range" id="width" data-property="width" min="50" max="400" value="200">
-    </div>
-    <div class="control-group">
-      <label for="height">Alto <span class="value-display" id="height-value">200px</span></label>
-      <input type="range" id="height" data-property="height" min="50" max="400" value="200">
-    </div>
-    <div class="control-group">
-      <label for="backgroundColor">Color de Fondo</label>
-      <input type="color" id="backgroundColor" data-property="backgroundColor" value="#007bff">
-    </div>
-    <div class="control-group">
-      <label for="opacity">Opacidad <span class="value-display" id="opacity-value">1</span></label>
-      <input type="range" id="opacity" data-property="opacity" min="0" max="1" step="0.01" value="1">
-    </div>
-    <div class="control-group">
-      <label for="borderRadius">Radio del Borde <span class="value-display" id="borderRadius-value">10px</span></label>
-      <input type="range" id="borderRadius" data-property="borderRadius" min="0" max="100" value="10">
-    </div>
-    <div class="control-group">
-      <label for="rotate">Rotación <span class="value-display" id="rotate-value">0deg</span></label>
-      <input type="range" id="rotate" data-property="rotate" min="0" max="360" value="0">
-    </div>
-    <hr>
-    <h4>Sombra (box-shadow)</h4>
-    <div class="shadow-controls">
-      <div class="control-group">
-        <label for="shadowX">Offset X <span class="value-display" id="shadowX-value">5px</span></label>
-        <input type="range" id="shadowX" data-property="shadowX" min="-50" max="50" value="5">
-      </div>
-      <div class="control-group">
-        <label for="shadowY">Offset Y <span class="value-display" id="shadowY-value">5px</span></label>
-        <input type="range" id="shadowY" data-property="shadowY" min="-50" max="50" value="5">
-      </div>
-      <div class="control-group">
-        <label for="shadowBlur">Blur <span class="value-display" id="shadowBlur-value">15px</span></label>
-        <input type="range" id="shadowBlur" data-property="shadowBlur" min="0" max="100" value="15">
-      </div>
-      <div class="control-group">
-        <label for="shadowSpread">Spread <span class="value-display" id="shadowSpread-value">0px</span></label>
-        <input type="range" id="shadowSpread" data-property="shadowSpread" min="-50" max="50" value="0">
+      <div class="header-actions">
+        <button id="undo-btn" class="action-button icon-button" title="Deshacer (Ctrl+Z)"><svg class="icon"><use href="#icon-undo"></use></svg></button>
+        <button id="redo-btn" class="action-button icon-button" title="Rehacer (Ctrl+Y)"><svg class="icon"><use href="#icon-redo"></use></svg></button>
+        <button id="share-btn" class="action-button icon-button" title="Obtener enlace para compartir"><svg class="icon"><use href="#icon-share"></use></svg></button>
+        <button id="theme-toggle" class="action-button icon-button" title="Cambiar Tema"><svg class="icon" id="theme-icon"><use href="#icon-sun"></use></svg></button>
       </div>
     </div>
-    <div class="control-group">
-        <label for="shadowColor">Color Sombra</label>
-        <input type="color" id="shadowColor" data-property="shadowColor" value="#000000">
+    <div class="controls-wrapper">
+      <div class="control-group"><label for="presets">Presets</label><select id="presets"></select></div>
+      <details open><summary>Texto y Fuente</summary><div class="details-content">
+          <div class="control-group"><label for="textContent">Contenido</label><input type="text" id="textContent" data-property="textContent"></div>
+          <div class="control-group"><label for="fontFamily">Fuente</label><select id="fontFamily" data-property="fontFamily"></select></div>
+          <div class="grid-2">
+            <div class="control-group"><label for="fontSize">Tamaño<span class="value-display" data-value-for="fontSize"></span></label><input type="range" id="fontSize" data-property="fontSize" data-unit="px" min="10" max="80" value="24"></div>
+            <div class="control-group"><label for="textColor">Color</label><input type="color" id="textColor" data-property="textColor"></div>
+          </div>
+      </div></details>
+      <details><summary>Fondo y Tamaño</summary><div class="details-content">
+        <div class="grid-2">
+          <div class="control-group"><label for="width">Ancho<span class="value-display" data-value-for="width"></span></label><input type="range" id="width" data-property="width" data-unit="px" min="50" max="500" value="250"></div>
+          <div class="control-group"><label for="height">Alto<span class="value-display" data-value-for="height"></span></label><input type="range" id="height" data-property="height" data-unit="px" min="50" max="500" value="250"></div>
+        </div>
+        <div class="control-group"><label for="opacity">Opacidad<span class="value-display" data-value-for="opacity"></span></label><input type="range" id="opacity" data-property="opacity" min="0" max="1" step="0.01"></div>
+        <div class="control-group"><label for="bgType">Tipo de Fondo</label><select id="bgType" data-property="bgType"><option value="solid">Sólido</option><option value="gradient">Gradiente</option></select></div>
+        <div class="control-group" id="solid-color-control"><label for="backgroundColor">Color</label><input type="color" id="backgroundColor" data-property="backgroundColor"></div>
+        <div id="gradient-controls" class="grid-2" style="display:none;"><div class="control-group"><label for="gradientColor1">Color 1</label><input type="color" id="gradientColor1" data-property="gradientColor1"></div><div class="control-group"><label for="gradientColor2">Color 2</label><input type="color" id="gradientColor2" data-property="gradientColor2"></div></div>
+        <div class="control-group" id="gradient-angle-control" style="display:none;"><label for="gradientAngle">Ángulo<span class="value-display" data-value-for="gradientAngle"></span></label><input type="range" id="gradientAngle" data-property="gradientAngle" data-unit="deg" min="0" max="360"></div>
+      </div></details>
+      <details><summary>Transformaciones 3D</summary><div class="details-content">
+          <div class="control-group"><label for="rotateX">Rotar X<span class="value-display" data-value-for="rotateX"></span></label><input type="range" id="rotateX" data-property="rotateX" data-unit="deg" min="-180" max="180"></div>
+          <div class="control-group"><label for="rotateY">Rotar Y<span class="value-display" data-value-for="rotateY"></span></label><input type="range" id="rotateY" data-property="rotateY" data-unit="deg" min="-180" max="180"></div>
+          <div class="control-group"><label for="scale">Escala<span class="value-display" data-value-for="scale"></span></label><input type="range" id="scale" data-property="scale" min="0.5" max="2" step="0.01"></div>
+      </div></details>
+      <details><summary>Bordes y Sombra</summary><div class="details-content">
+          <div class="control-group"><label for="borderRadius">Radio<span class="value-display" data-value-for="borderRadius"></span></label><input type="range" id="borderRadius" data-property="borderRadius" data-unit="px" min="0" max="250"></div>
+          <div class="grid-2"><div class="control-group"><label for="borderWidth">Ancho<span class="value-display" data-value-for="borderWidth"></span></label><input type="range" id="borderWidth" data-property="borderWidth" data-unit="px" min="0" max="20"></div><div class="control-group"><label for="borderColor">Color Borde</label><input type="color" id="borderColor" data-property="borderColor"></div></div><hr>
+          <div class="grid-2">
+            <div class="control-group"><label for="shadowX">Offset X<span class="value-display" data-value-for="shadowX"></span></label><input type="range" id="shadowX" data-property="shadowX" data-unit="px" min="-50" max="50"></div>
+            <div class="control-group"><label for="shadowY">Offset Y<span class="value-display" data-value-for="shadowY"></span></label><input type="range" id="shadowY" data-property="shadowY" data-unit="px" min="-50" max="50"></div>
+            <div class="control-group"><label for="shadowBlur">Blur<span class="value-display" data-value-for="shadowBlur"></span></label><input type="range" id="shadowBlur" data-property="shadowBlur" data-unit="px" min="0" max="100"></div>
+            <div class="control-group"><label for="shadowSpread">Spread<span class="value-display" data-value-for="shadowSpread"></span></label><input type="range" id="shadowSpread" data-property="shadowSpread" data-unit="px" min="-50" max="50"></div>
+          </div>
+          <div class="control-group"><label for="shadowColor">Color Sombra</label><input type="color" id="shadowColor" data-property="shadowColor"></div>
+          <div class="control-group"><label for="shadowOpacity">Opacidad Sombra<span class="value-display" data-value-for="shadowOpacity"></span></label><input type="range" id="shadowOpacity" data-property="shadowOpacity" min="0" max="1" step="0.01"></div>
+      </div></details>
+      <details><summary>Filtros y Animación</summary><div class="details-content">
+          <div class="control-group"><label for="filterBlur">Blur (Filtro)<span class="value-display" data-value-for="filterBlur"></span></label><input type="range" id="filterBlur" data-property="filterBlur" data-unit="px" min="0" max="20"></div>
+          <div class="control-group"><label for="saturate">Saturación<span class="value-display" data-value-for="saturate"></span></label><input type="range" id="saturate" data-property="saturate" data-unit="%" min="0" max="200"></div>
+          <div class="control-group"><label for="backdropBlur">Blur de Fondo<span class="value-display" data-value-for="backdropBlur"></span></label><input type="range" id="backdropBlur" data-property="backdropBlur" data-unit="px" min="0" max="20"></div><hr>
+          <div class="control-group"><label for="animation">Animación</label><select id="animation" data-property="animation"></select></div>
+      </div></details>
+      <details><summary>Control del Lienzo</summary><div class="details-content">
+          <div class="control-group"><label for="viewportBgColor">Color Lienzo</label><input type="color" id="viewportBgColor" value="#e9ecef"></div>
+          <div class="control-group"><label for="viewportBgUrl">Imagen Lienzo (URL)</label><input type="text" id="viewportBgUrl" placeholder="https://images.unsplash.com/..."></div>
+      </div></details>
     </div>
-    <div class="control-group">
-        <label for="shadowOpacity">Opacidad Sombra <span class="value-display" id="shadowOpacity-value">0.2</span></label>
-        <input type="range" id="shadowOpacity" data-property="shadowOpacity" min="0" max="1" step="0.01" value="0.2">
+    <div class="user-presets">
+        <div class="grid-2" style="gap:8px">
+            <input type="text" id="presetName" placeholder="Nombre del preset...">
+            <button id="save-preset-btn" class="action-button"><svg class="icon"><use href="#icon-save"></use></svg>Guardar</button>
+        </div>
     </div>
-    <hr>
-    <button id="reset-btn" class="action-button">
-      <svg class="icon"><use href="#icon-reset"></use></svg>
-      Reiniciar
-    </button>
   </div>
 
-  <!-- VISOR DEL CUBO -->
-  <div class="cube-viewport">
-    <div class="cube" id="cube"></div>
-  </div>
+  <!-- VISOR -->
+  <div class="cube-viewport"><div class="cube" id="cube"></div></div>
   
   <!-- PANEL DE CÓDIGO -->
   <div class="code-container">
-    <h2>Código CSS</h2>
-    <pre class="code-output" id="generatedCode"></pre>
-    <button id="copy-code-btn" class="action-button">
-      <svg class="icon" id="copy-icon"><use href="#icon-copy"></use></svg>
-      <span id="copy-text">Copiar Código</span>
-    </button>
+    <div class="code-tabs">
+        <button class="code-tab active" data-tab="css">CSS</button>
+        <button class="code-tab" data-tab="html">HTML</button>
+    </div>
+    <div id="css-panel" class="code-panel active">
+        <pre class="code-output language-css" id="generatedCode"></pre>
+    </div>
+    <div id="html-panel" class="code-panel">
+        <pre class="code-output language-html" id="generatedHtml"></pre>
+    </div>
+    <button id="copy-code-btn" class="action-button" style="margin-top: 15px;"><svg class="icon" id="copy-icon"><use href="#icon-copy"></use></svg><span id="copy-text">Copiar Código</span></button>
   </div>
-
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-  // 1. ESTADO INICIAL Y PRESETS
-  const initialState = {
-    width: 200, height: 200, backgroundColor: '#007bff', opacity: 1,
-    borderRadius: 10, rotate: 0,
-    shadowX: 5, shadowY: 5, shadowBlur: 15, shadowSpread: 0,
-    shadowColor: '#000000', shadowOpacity: 0.2
-  };
+const app = {
+// --- ESTADO Y CONFIGURACIÓN ---
+state: {},
+history: [],
+historyIndex: -1,
+isDragging: false,
 
-  const presets = {
-    default: { ...initialState },
-    card: {
-      width: 300, height: 180, backgroundColor: '#ffffff', opacity: 1,
-      borderRadius: 8, rotate: 0,
-      shadowX: 0, shadowY: 10, shadowBlur: 20, shadowSpread: -5,
-      shadowColor: '#000000', shadowOpacity: 0.1
-    },
-    button: {
-      width: 150, height: 60, backgroundColor: '#28a745', opacity: 1,
-      borderRadius: 30, rotate: 0,
-      shadowX: 0, shadowY: 4, shadowBlur: 8, shadowSpread: 0,
-      shadowColor: '#000000', shadowOpacity: 0.25
-    },
-    gel: {
-      width: 180, height: 180, backgroundColor: '#ff416c', opacity: 0.8,
-      borderRadius: 90, rotate: 0,
-      shadowX: -10, shadowY: -10, shadowBlur: 15, shadowSpread: 5,
-      shadowColor: '#ffffff', shadowOpacity: 0.3
-    },
-    neumorphic: {
-        width: 200, height: 200, backgroundColor: '#e0e5ec', opacity: 1,
-        borderRadius: 20, rotate: 0,
-        shadowX: 9, shadowY: 9, shadowBlur: 16, shadowSpread: 0,
-        shadowColor: '#a3b1c6', shadowOpacity: 1
-    }
-  };
+getInitialState() {
+return {
+    textContent: 'CSS Rocks!', fontFamily: 'Roboto', fontSize: 24, textColor: '#ffffff',
+    width: 250, height: 250, opacity: 1,
+    bgType: 'solid', backgroundColor: '#007bff',
+    gradientColor1: '#ff416c', gradientColor2: '#ff4b2b', gradientAngle: 90,
+    rotateX: 0, rotateY: 0, scale: 1,
+    borderRadius: 25, borderWidth: 0, borderColor: '#ffffff',
+    shadowX: 0, shadowY: 10, shadowBlur: 20, shadowSpread: -5, shadowColor: '#000000', shadowOpacity: 0.2,
+    filterBlur: 0, saturate: 100, backdropBlur: 0,
+    animation: 'none', currentPreset: 'default'
+}
+},
 
-  let state = { ...initialState };
+// --- ELEMENTOS DEL DOM ---
+elements: {}, // Inicializado en init()
 
-  // 2. SELECCIÓN DE ELEMENTOS DEL DOM
-  const elements = {
+// --- LÓGICA DE LA APP ---
+init() {
+    this.cacheDOMElements();
+    const stateFromUrl = this.getStateFromUrl();
+    this.state = stateFromUrl || this.getInitialState();
+    this.populateStaticSelects();
+    this.bindEventListeners();
+    this.loadPresets();
+    this.loadTheme();
+    this.updateUI(false);
+    this.pushStateToHistory(JSON.stringify(this.state));
+},
+
+cacheDOMElements() {
+this.elements = {
     cube: document.getElementById('cube'),
+    viewport: document.querySelector('.cube-viewport'),
+    inputs: document.querySelectorAll('[data-property]'),
+    valueDisplays: document.querySelectorAll('.value-display'),
+    fontLink: document.getElementById('font-link'),
+    undoBtn: document.getElementById('undo-btn'),
+    redoBtn: document.getElementById('redo-btn'),
+    shareBtn: document.getElementById('share-btn'),
+    themeToggle: document.getElementById('theme-toggle'),
+    themeIcon: document.getElementById('theme-icon'),
+    prismThemeLink: document.getElementById('prism-theme'),
+    presetSelect: document.getElementById('presets'),
+    savePresetBtn: document.getElementById('save-preset-btn'),
+    presetNameInput: document.getElementById('presetName'),
+    bgTypeSelect: document.getElementById('bgType'),
+    solidColorControl: document.getElementById('solid-color-control'),
+    gradientControls: document.getElementById('gradient-controls'),
+    gradientAngleControl: document.getElementById('gradient-angle-control'),
+    viewportBgColor: document.getElementById('viewportBgColor'),
+    viewportBgUrl: document.getElementById('viewportBgUrl'),
     generatedCode: document.getElementById('generatedCode'),
+    generatedHtml: document.getElementById('generatedHtml'),
     copyBtn: document.getElementById('copy-code-btn'),
     copyText: document.getElementById('copy-text'),
-    copyIcon: document.getElementById('copy-icon'),
-    themeToggle: document.getElementById('theme-toggle'),
-    inputs: document.querySelectorAll('[data-property]'),
-    valueDisplays: {
-      width: document.getElementById('width-value'),
-      height: document.getElementById('height-value'),
-      opacity: document.getElementById('opacity-value'),
-      borderRadius: document.getElementById('borderRadius-value'),
-      rotate: document.getElementById('rotate-value'),
-      shadowX: document.getElementById('shadowX-value'),
-      shadowY: document.getElementById('shadowY-value'),
-      shadowBlur: document.getElementById('shadowBlur-value'),
-      shadowSpread: document.getElementById('shadowSpread-value'),
-      shadowOpacity: document.getElementById('shadowOpacity-value'),
-    }
-  };
+    copyIcon: document.getElementById('copy-icon').firstElementChild, // El <use>
+    codeTabs: document.querySelectorAll('.code-tab'),
+    cssPanel: document.getElementById('css-panel'),
+    htmlPanel: document.getElementById('html-panel'),
+    details: document.querySelectorAll('.controls-wrapper details'),
+}
+},
 
-  // 3. FUNCIONES PRINCIPALES (RENDERIZADO Y LÓGICA)
-
-  // Convierte un color HEX a RGBA
-  const hexToRgba = (hex, alpha) => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  };
-
-  // Actualiza toda la UI basándose en el objeto 'state'
-  function render() {
-    // Aplicar estilos al cubo
-    const shadowRgba = hexToRgba(state.shadowColor, state.shadowOpacity);
-    const neumorphicShadow = state.preset === 'neumorphic' ? `, -9px -9px 16px rgba(255,255,255,1)` : '';
-
-    elements.cube.style.width = `${state.width}px`;
-    elements.cube.style.height = `${state.height}px`;
-    elements.cube.style.backgroundColor = state.backgroundColor;
-    elements.cube.style.opacity = state.opacity;
-    elements.cube.style.borderRadius = `${state.borderRadius}px`;
-    elements.cube.style.transform = `rotate(${state.rotate}deg)`;
-    elements.cube.style.boxShadow = `${state.shadowX}px ${state.shadowY}px ${state.shadowBlur}px ${state.shadowSpread}px ${shadowRgba}${neumorphicShadow}`;
-
-    // Actualizar el texto informativo debajo del cubo
-    elements.cube.dataset.info = `
-      ${state.width}x${state.height} | ${state.borderRadius}px | ${state.rotate}°
-    `.trim().replace(/\s+/g, ' ');
-
-    // Actualizar los displays de valores
-    Object.keys(elements.valueDisplays).forEach(key => {
-        const unit = key.includes('Radius') || key.includes('width') || key.includes('height') || key.includes('shadow') ? 'px' : (key === 'rotate' ? 'deg' : '');
-        elements.valueDisplays[key].textContent = `${state[key]}${unit}`;
+populateStaticSelects() {
+    const fonts = ['Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Playfair Display', 'Fira Code'];
+    const fontSelect = document.getElementById('fontFamily');
+    fonts.forEach(font => {
+        const option = document.createElement('option');
+        option.value = font;
+        option.textContent = font;
+        fontSelect.appendChild(option);
     });
 
-    // Actualizar el código generado en tiempo real
-    updateGeneratedCode();
-  }
-  
-  // Genera y muestra el código CSS
-  function updateGeneratedCode() {
-    const shadowRgba = hexToRgba(state.shadowColor, state.shadowOpacity);
-    const neumorphicShadow = state.preset === 'neumorphic' ? `, 
-    -9px -9px 16px rgba(255,255,255,1)` : '';
+    const animations = {
+        none: 'Ninguna',
+        'pulse 2s infinite': 'Pulso',
+        'shake 0.8s infinite': 'Sacudida',
+        'float 3s infinite ease-in-out': 'Flotar',
+    };
+    const animSelect = document.getElementById('animation');
+    for (const [value, text] of Object.entries(animations)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        animSelect.appendChild(option);
+    }
+},
+
+pushStateToHistory(stateString) {
+    if (this.history[this.historyIndex] === stateString) return; // No guardar estados idénticos
+    this.history = this.history.slice(0, this.historyIndex + 1);
+    this.history.push(stateString);
+    if(this.history.length > 50) this.history.shift();
+    this.historyIndex = this.history.length - 1;
+    this.updateHistoryButtons();
+},
+
+undo() {
+    if (this.historyIndex > 0) {
+        this.historyIndex--;
+        this.state = JSON.parse(this.history[this.historyIndex]);
+        this.updateUI(false);
+        this.updateHistoryButtons();
+    }
+},
+
+redo() {
+    if (this.historyIndex < this.history.length - 1) {
+        this.historyIndex++;
+        this.state = JSON.parse(this.history[this.historyIndex]);
+        this.updateUI(false);
+        this.updateHistoryButtons();
+    }
+},
+
+updateUI(trackChange = true) {
+    const { cube } = this.elements;
+    const s = this.state;
+
+    // Aplicar estilos
+    cube.style.fontFamily = `'${s.fontFamily}', sans-serif`;
+    cube.style.color = s.textColor;
+    cube.style.fontSize = `${s.fontSize}px`;
+    cube.textContent = s.textContent;
+    cube.style.width = `${s.width}px`;
+    cube.style.height = `${s.height}px`;
+    cube.style.opacity = s.opacity;
+    cube.style.background = s.bgType === 'solid' ? s.backgroundColor : `linear-gradient(${s.gradientAngle}deg, ${s.gradientColor1}, ${s.gradientColor2})`;
+    cube.style.transform = `rotateX(${s.rotateX}deg) rotateY(${s.rotateY}deg) scale(${s.scale})`;
+    cube.style.borderRadius = `${s.borderRadius}px`;
+    cube.style.border = `${s.borderWidth}px solid ${s.borderColor}`;
+    const shadowRgba = this.hexToRgba(s.shadowColor, s.shadowOpacity);
+    cube.style.boxShadow = `${s.shadowX}px ${s.shadowY}px ${s.shadowBlur}px ${s.shadowSpread}px ${shadowRgba}`;
+    const filter = `blur(${s.filterBlur}px) saturate(${s.saturate}%)`;
+    const backdropFilter = `blur(${s.backdropBlur}px)`;
+    cube.style.filter = s.filterBlur > 0 || s.saturate !== 100 ? filter : 'none';
+    cube.style.webkitBackdropFilter = s.backdropBlur > 0 ? backdropFilter : 'none';
+    cube.style.backdropFilter = s.backdropBlur > 0 ? backdropFilter : 'none';
+    cube.style.animation = s.animation === 'none' ? '' : s.animation;
+
+    // Actualizar controles
+    if (!this.isDragging) {
+        this.elements.inputs.forEach(input => {
+            const property = input.dataset.property;
+            if (s.hasOwnProperty(property)) input.value = s[property];
+        });
+    }
     
-    const code = `
-.mi-elemento {
-  width: ${state.width}px;
-  height: ${state.height}px;
-  background-color: ${state.backgroundColor};
-  opacity: ${state.opacity};
-  border-radius: ${state.borderRadius}px;
-  transform: rotate(${state.rotate}deg);
-  box-shadow: ${state.shadowX}px ${state.shadowY}px ${state.shadowBlur}px ${state.shadowSpread}px ${shadowRgba}${neumorphicShadow};
-  transition: all 0.3s ease-in-out;
-}`;
-    elements.generatedCode.textContent = code.trim();
-  }
-
-  // Actualiza los valores de los inputs (útil para presets y reset)
-  function updateInputsFromState() {
-    elements.inputs.forEach(input => {
-      const property = input.dataset.property;
-      if (state.hasOwnProperty(property)) {
-        input.value = state[property];
-      }
+    this.elements.valueDisplays.forEach(display => {
+        const property = display.dataset.valueFor;
+        const input = document.getElementById(property);
+        if (!input) return;
+        const unit = input.dataset.unit || '';
+        const value = parseFloat(s[property]).toFixed(unit === '%' ? 0 : (property === 'opacity' || property === 'scale' || property === 'shadowOpacity' ? 2 : 0));
+        display.textContent = `${value}${unit}`;
     });
-    // Si se está usando un preset, actualizar el dropdown
-    document.getElementById('presets').value = state.preset || 'default';
-  }
 
-  // 4. MANEJADORES DE EVENTOS
-
-  // Manejador genérico para todos los inputs de control
-  function handleInputChange(e) {
-    const property = e.target.dataset.property;
-    let value = e.target.value;
-    if (e.target.type === 'range') {
-        value = parseFloat(value);
+    this.elements.fontLink.href = `https://fonts.googleapis.com/css2?family=${s.fontFamily.replace(' ', '+')}&display=swap`;
+    const isGradient = s.bgType === 'gradient';
+    this.elements.solidColorControl.style.display = isGradient ? 'none' : 'block';
+    this.elements.gradientControls.style.display = isGradient ? 'grid' : 'none';
+    this.elements.gradientAngleControl.style.display = isGradient ? 'block' : 'none';
+    this.elements.presetSelect.value = s.currentPreset || 'custom';
+    
+    this.generateCode();
+    
+    if (trackChange) {
+        this.pushStateToHistory(JSON.stringify(this.state));
     }
-    state[property] = value;
-    state.preset = 'default'; // Cualquier cambio manual desactiva el preset
-    document.getElementById('presets').value = 'default';
-    render();
-  }
+},
 
-  // Copiar código al portapapeles
-  function copyCode() {
-    navigator.clipboard.writeText(elements.generatedCode.textContent).then(() => {
-      elements.copyText.textContent = '¡Copiado!';
-      elements.copyIcon.innerHTML = '<use href="#icon-check"></use>';
-      elements.copyBtn.classList.add('success');
-      setTimeout(() => {
-        elements.copyText.textContent = 'Copiar Código';
-        elements.copyIcon.innerHTML = '<use href="#icon-copy"></use>';
-        elements.copyBtn.classList.remove('success');
-      }, 2000);
+generateCode() {
+    const { state: s } = this;
+    let css = `.mi-elemento {\n`;
+    css += `  /* Para centrar el contenido, si es necesario */\n`;
+    css += `  display: flex;\n`;
+    css += `  align-items: center;\n`;
+    css += `  justify-content: center;\n`;
+    css += `  padding: 10px;\n`;
+    css += `  box-sizing: border-box;\n\n`;
+    css += `  width: ${s.width}px;\n`;
+    css += `  height: ${s.height}px;\n`;
+    css += `  color: ${s.textColor};\n`;
+    css += `  font-family: '${s.fontFamily}', sans-serif;\n`;
+    css += `  font-size: ${s.fontSize}px;\n`;
+    css += s.bgType === 'solid' ? `  background-color: ${s.backgroundColor};\n` : `  background-image: linear-gradient(${s.gradientAngle}deg, ${s.gradientColor1}, ${s.gradientColor2});\n`;
+    if (s.opacity < 1) css += `  opacity: ${s.opacity};\n`;
+    if (s.borderRadius > 0) css += `  border-radius: ${s.borderRadius}px;\n`;
+    if (s.borderWidth > 0) css += `  border: ${s.borderWidth}px solid ${s.borderColor};\n`;
+    const shadowRgba = this.hexToRgba(s.shadowColor, s.shadowOpacity);
+    css += `  box-shadow: ${s.shadowX}px ${s.shadowY}px ${s.shadowBlur}px ${s.shadowSpread}px ${shadowRgba};\n`;
+
+    let transformProps = [];
+    if (s.rotateX !== 0) transformProps.push(`rotateX(${s.rotateX}deg)`);
+    if (s.rotateY !== 0) transformProps.push(`rotateY(${s.rotateY}deg)`);
+    if (s.scale !== 1) transformProps.push(`scale(${s.scale})`);
+    if (transformProps.length > 0) css += `  transform: ${transformProps.join(' ')};\n`;
+
+    let filterProps = [];
+    if (s.filterBlur > 0) filterProps.push(`blur(${s.filterBlur}px)`);
+    if (s.saturate !== 100) filterProps.push(`saturate(${s.saturate}%)`);
+    if (filterProps.length > 0) css += `  filter: ${filterProps.join(' ')};\n`;
+
+    if (s.backdropBlur > 0) {
+    css += `  /* Para el efecto glassmorphism, el contenedor debe tener un fondo */\n`
+    css += `  -webkit-backdrop-filter: blur(${s.backdropBlur}px);\n`;
+    css += `  backdrop-filter: blur(${s.backdropBlur}px);\n`;
+    }
+
+    if (s.animation !== 'none') css += `  animation: ${s.animation};\n`;
+    css += `  transition: all 0.2s ease-out;\n`;
+    css += `}\n`;
+    css += `\n/* Importar la fuente desde Google Fonts */\n`;
+    css += `@import url('https://fonts.googleapis.com/css2?family=${s.fontFamily.replace(/ /g, '+')}&display=swap');\n`
+
+
+    if(s.animation !== 'none') {
+        const animationName = s.animation.split(' ')[0];
+        const keyframes = {
+            pulse: `@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }`,
+            shake: `@keyframes shake { 0%, 100% { transform:translateX(0); } 10%, 30%, 50%, 70%, 90% { transform:translateX(-5px); } 20%, 40%, 60%, 80% { transform:translateX(5px); } }`,
+            float: `@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }`,
+        }
+        if(keyframes[animationName]) css += `\n${keyframes[animationName]}\n`;
+    }
+
+    this.elements.generatedCode.textContent = css;
+    this.elements.generatedHtml.textContent = `<div class="mi-elemento">${s.textContent}</div>`;
+    Prism.highlightAll();
+},
+
+bindEventListeners() {
+    this.elements.inputs.forEach(input => input.addEventListener('input', this.handleInputChange.bind(this)));
+    this.elements.cube.addEventListener('mousedown', this.handleDragToRotate.bind(this));
+
+    this.elements.presetSelect.addEventListener('change', e => {
+        const presetName = e.target.value;
+        if (presetName === 'custom') return;
+        const allPresets = this.getAllPresets();
+        this.state = { ...allPresets[presetName] };
+        this.updateUI(true);
     });
-  }
 
-  // Cambiar tema
-  function toggleTheme() {
+    this.elements.undoBtn.addEventListener('click', () => this.undo());
+    this.elements.redoBtn.addEventListener('click', () => this.redo());
+    document.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey) {
+            if(e.key === 'z') { e.preventDefault(); this.undo(); }
+            if(e.key === 'y') { e.preventDefault(); this.redo(); }
+        }
+    });
+
+    this.elements.shareBtn.addEventListener('click', () => this.generateShareLink());
+    this.elements.themeToggle.addEventListener('click', () => this.toggleTheme());
+    this.elements.savePresetBtn.addEventListener('click', () => this.savePreset());
+    
+    this.elements.viewportBgColor.addEventListener('input', e => this.elements.viewport.style.backgroundColor = e.target.value);
+    this.elements.viewportBgUrl.addEventListener('input', e => {
+        this.elements.viewport.style.backgroundImage = e.target.value ? `url('${e.target.value}')` : 'none';
+    });
+
+    this.elements.details.forEach(detail => {
+        detail.addEventListener('toggle', () => {
+            if (detail.open) {
+                this.elements.details.forEach(d => { if (d !== detail) d.open = false; });
+            }
+        });
+    });
+
+    this.elements.codeTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            this.elements.codeTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(`${tab.dataset.tab}-panel`).classList.add('active');
+        })
+    });
+    this.elements.copyBtn.addEventListener('click', () => this.copyCode());
+},
+
+handleInputChange(e) {
+    const { property } = e.target.dataset;
+    let { value } = e.target;
+    if (e.target.type === 'range') value = parseFloat(value);
+    if (e.target.type === 'number') value = parseFloat(value);
+    this.state[property] = value;
+    this.state.currentPreset = 'custom';
+    this.updateUI(true);
+},
+
+handleDragToRotate(e) {
+    e.preventDefault();
+    this.isDragging = true;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initialRotateX = this.state.rotateX;
+    const initialRotateY = this.state.rotateY;
+
+    const onMouseMove = (moveEvent) => {
+        const dx = moveEvent.clientX - startX;
+        const dy = moveEvent.clientY - startY;
+        this.state.rotateY = initialRotateY + dx * 0.5; // Ajusta sensibilidad
+        this.state.rotateX = initialRotateX - dy * 0.5; // Ajusta sensibilidad
+        this.updateUI(false); // No guardar en el historial en cada movimiento
+    };
+
+    const onMouseUp = () => {
+        this.isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        // Guardar el estado final en el historial después de arrastrar
+        this.pushStateToHistory(JSON.stringify(this.state));
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+},
+
+updateHistoryButtons() {
+    this.elements.undoBtn.disabled = this.historyIndex <= 0;
+    this.elements.redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+},
+
+getAllPresets() {
+    const builtInPresets = {
+        'default': { ...this.getInitialState(), currentPreset: 'default', textContent: 'Default'},
+        'glass-card': { ...this.getInitialState(), textContent: 'Glass', bgType: 'solid', backgroundColor: '#ffffff', opacity: 0.1, backdropBlur: 10, borderWidth: 1, borderColor: '#ffffff4d', borderRadius: 15, currentPreset: 'glass-card' },
+        '3d-button': { ...this.getInitialState(), textContent: 'Click Me', width: 180, height: 60, bgType: 'gradient', gradientColor1: '#56ab2f', gradientColor2: '#a8e063', rotateX: 0, rotateY: 0, borderRadius: 30, shadowY: 8, shadowBlur: 15, currentPreset: '3d-button' },
+        'neon': { ...this.getInitialState(), textContent: 'Neon', textColor: '#fff', backgroundColor: '#1a1a1a', shadowColor: '#00ffff', shadowOpacity: 1, shadowX: 0, shadowY: 0, shadowBlur: 20, shadowSpread: 5, borderRadius: 10, currentPreset: 'neon'}
+    };
+    const userPresets = JSON.parse(localStorage.getItem('userCubePresets')) || {};
+    return { ...builtInPresets, ...userPresets };
+},
+
+loadPresets() {
+    const presets = this.getAllPresets();
+    this.elements.presetSelect.innerHTML = '<option value="custom">Personalizado</option>';
+    for(const name in presets) {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = presets[name].textContent || name;
+        this.elements.presetSelect.appendChild(option);
+    }
+},
+
+savePreset() {
+    const name = this.elements.presetNameInput.value.trim();
+    if (!name) {
+        alert('Por favor, introduce un nombre para tu preset.');
+        return;
+    }
+    const userPresets = JSON.parse(localStorage.getItem('userCubePresets')) || {};
+    userPresets[name] = { ...this.state, currentPreset: name, textContent: name };
+    localStorage.setItem('userCubePresets', JSON.stringify(userPresets));
+    this.elements.presetNameInput.value = '';
+    this.loadPresets();
+    this.elements.presetSelect.value = name;
+    alert(`Preset "${name}" guardado!`);
+},
+
+generateShareLink() {
+    const encodedState = btoa(JSON.stringify(this.state));
+    const url = `${window.location.origin}${window.location.pathname}?state=${encodedState}`;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('¡Enlace para compartir copiado al portapapeles!');
+    }).catch(err => {
+        console.error('No se pudo copiar el enlace: ', err);
+        prompt('Copia este enlace manualmente:', url);
+    });
+},
+
+getStateFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const stateParam = urlParams.get('state');
+    if (stateParam) {
+        try { return JSON.parse(atob(stateParam)); }
+        catch (e) { console.error('Error al parsear el estado de la URL', e); return null; }
+    }
+    return null;
+},
+
+loadTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    this.updateThemeUI(savedTheme);
+},
+
+toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme); // Guardar preferencia
-    elements.themeToggle.innerHTML = `<svg class="icon"><use href="#icon-${newTheme === 'dark' ? 'sun' : 'moon'}"></use></svg>`;
-  }
+    localStorage.setItem('theme', newTheme);
+    this.updateThemeUI(newTheme);
+},
 
-  // 5. INICIALIZACIÓN
+updateThemeUI(theme) {
+    if (theme === 'dark') {
+        this.elements.themeIcon.innerHTML = '<use href="#icon-sun"></use>';
+        this.elements.prismThemeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css';
+    } else {
+        this.elements.themeIcon.innerHTML = '<use href="#icon-moon"></use>';
+        this.elements.prismThemeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-coy.css';
+    }
+},
 
-  // Asignar eventos
-  elements.inputs.forEach(input => input.addEventListener('input', handleInputChange));
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    state = { ...initialState };
-    state.preset = 'default';
-    updateInputsFromState();
-    render();
-  });
-  document.getElementById('presets').addEventListener('change', (e) => {
-    const presetName = e.target.value;
-    state = { ...presets[presetName] };
-    state.preset = presetName; // Guardar el nombre del preset en el estado
-    updateInputsFromState();
-    render();
-  });
-  elements.copyBtn.addEventListener('click', copyCode);
-  elements.themeToggle.addEventListener('click', toggleTheme);
+copyCode() {
+    const activeTab = document.querySelector('.code-tab.active').dataset.tab;
+    const codeToCopy = activeTab === 'css' 
+        ? this.elements.generatedCode.textContent 
+        : this.elements.generatedHtml.textContent;
 
-  // Cargar tema guardado
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  if (savedTheme === 'dark') {
-    toggleTheme();
-  }
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+        this.elements.copyText.textContent = '¡Copiado!';
+        this.elements.copyIcon.setAttribute('href', '#icon-check');
+        setTimeout(() => {
+            this.elements.copyText.textContent = 'Copiar Código';
+            this.elements.copyIcon.setAttribute('href', '#icon-copy');
+        }, 2000);
+    });
+},
 
-  // Renderizado inicial
-  updateInputsFromState();
-  render();
+hexToRgba(hex, alpha) {
+    if (!hex || typeof hex !== 'string' || hex.length < 4) return `rgba(0,0,0,${alpha})`;
+    let r=0, g=0, b=0;
+    if(hex.length == 4) { r = parseInt(hex[1]+hex[1], 16); g = parseInt(hex[2]+hex[2], 16); b = parseInt(hex[3]+hex[3], 16); }
+    else if(hex.length == 7) { r = parseInt(hex.slice(1,3), 16); g = parseInt(hex.slice(3,5), 16); b = parseInt(hex.slice(5,7), 16); }
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+},
+
+};
+
+app.init();
 });
 </script>
 </body>
