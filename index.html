@@ -3,335 +3,534 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor CSS Interactivo de Cubos</title>
 <style>
   :root {
-    --bg-color: #ffffff;
-    --text-color: #000000;
-    --panel-bg: #f4f4f4;
-    --border-color: #ccc;
-    --cube-container-bg: #eee;
-    --button-bg: #4CAF50;
-    --button-hover: #45a049;
+    --bg-color: #f8f9fa;
+    --text-color: #212529;
+    --panel-bg: #ffffff;
+    --border-color: #dee2e6;
+    --cube-container-bg: #e9ecef;
+    --button-bg: #007bff;
+    --button-hover: #0056b3;
     --button-text: #ffffff;
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+    --success-bg: #28a745;
+    --success-hover: #218838;
   }
 
   [data-theme="dark"] {
-    --bg-color: #1a1a1a;
-    --text-color: #ffffff;
-    --panel-bg: #2d2d2d;
-    --border-color: #444;
-    --cube-container-bg: #333;
-    --button-bg: #2d5e30;
-    --button-hover: #1e4021;
+    --bg-color: #121212;
+    --text-color: #e0e0e0;
+    --panel-bg: #1e1e1e;
+    --border-color: #333;
+    --cube-container-bg: #2a2a2a;
+    --button-bg: #0d6efd;
+    --button-hover: #0b5ed7;
     --button-text: #ffffff;
+    --input-bg: #2c2c2c;
+    --input-border: #444;
+    --success-bg: #198754;
+    --success-hover: #157347;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
   body {
     display: flex;
-    align-items: flex-start;
     min-height: 100vh;
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
   }
-  .container {
+  
+  .app-container {
     display: flex;
-    justify-content: space-between;
     width: 100%;
+    flex-wrap: wrap; /* Para responsividad */
   }
-  .panel {
-    width: 250px;
+
+  .panel, .code-container {
+    width: 300px;
     padding: 20px;
     background-color: var(--panel-bg);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .panel {
     border-right: 1px solid var(--border-color);
   }
-  .cube-container {
-    width: 650px;
-    height: 650px;
+
+  .code-container {
+    border-left: 1px solid var(--border-color);
+  }
+
+  .cube-viewport {
+    flex-grow: 1;
+    min-width: 320px;
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--cube-container-bg);
-    border: 1px solid var(--border-color);
+    perspective: 1000px; /* Añadido para transformaciones 3D */
   }
+
   .cube {
-    width: 200px;
-    height: 200px;
-    background-color: #3498db;
-    opacity: 0.7;
-    border: 1px solid #2980b9;
-    border-radius: 10px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
-    transform: rotate(0.3s);
-    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     position: relative;
+    transition: all 0.3s ease-in-out;
   }
+
   .cube::after {
-    content: attr(data-size) " | Borde: " attr(data-border) "px | Radio: " attr(data-radius) "px | Rotación: " attr(data-rotation) "°";
+    content: attr(data-info);
     position: absolute;
-    bottom: -25px;
+    bottom: -35px;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-color);
     white-space: nowrap;
-  }
-  .code-container {
-    width: 250px;
-    padding: 20px;
     background-color: var(--panel-bg);
-    border-left: 1px solid var(--border-color);
+    padding: 3px 8px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
-  .code {
-    font-family: monospace;
-    white-space: pre;
-    overflow: auto;
-    height: 250px;
-    border: 1px solid var(--border-color);
-    padding: 10px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+
+  /* --- Controles --- */
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
   }
-  .input-value {
-    font-size: 12px;
-    margin-left: 5px;
+  .panel-header h2 {
+    margin: 0;
+  }
+  .control-group {
+    margin-bottom: 15px;
+  }
+  .control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 5px;
+  }
+  .value-display {
+    font-weight: normal;
+    color: #888;
   }
   input[type="range"] {
     width: 100%;
-    margin: 10px 0;
+    margin: 5px 0;
   }
-  input[type="number"] {
-    width: 60px;
-    background-color: var(--bg-color);
+  input[type="number"], input[type="text"], input[type="color"], select {
+    width: 100%;
+    padding: 8px;
+    background-color: var(--input-bg);
     color: var(--text-color);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
   }
-  input[type="text"] {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
+  .shadow-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
   }
-  label {
-    display: block;
-    margin-top: 10px;
-  }
-  .theme-switch {
-    margin: 10px;
-    padding: 8px 15px;
-    background-color: var(--panel-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    cursor: pointer;
-    color: var(--text-color);
-  }
+
+  /* --- Botones --- */
   .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     background-color: var(--button-bg);
     color: var(--button-text);
     border: none;
-    padding: 10px 20px;
+    padding: 10px 15px;
     border-radius: 5px;
     cursor: pointer;
-    margin-top: 10px;
     width: 100%;
-    transition: background-color 0.3s;
+    font-size: 16px;
+    transition: background-color 0.2s;
   }
   .action-button:hover {
     background-color: var(--button-hover);
   }
+  .action-button.success {
+    background-color: var(--success-bg);
+  }
+  .action-button.success:hover {
+    background-color: var(--success-hover);
+  }
+
+  .theme-switch {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+  }
+
+  /* --- Código --- */
+  .code-output {
+    font-family: "Fira Code", "Courier New", monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    overflow: auto;
+    height: calc(100vh - 200px); /* Ajustado para más espacio */
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    border-radius: 5px;
+  }
+
+  /* --- Responsividad --- */
+  @media (max-width: 1024px) {
+    .app-container {
+      flex-direction: column;
+    }
+    .panel, .code-container, .cube-viewport {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--border-color);
+      height: auto;
+    }
+    .cube-viewport {
+      min-height: 400px;
+    }
+  }
+
 </style>
-<title>Programa de Creación de Cubos</title>
 </head>
 <body>
-<div class="container">
+
+<!-- Iconos SVG para usar en botones -->
+<svg width="0" height="0" style="display:none;">
+  <symbol id="icon-copy" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+  <symbol id="icon-reset" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></symbol>
+  <symbol id="icon-sun" viewBox="0 0 24 24"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM20 11H23V13H20zM1 11H4V13H1zM12 20V23H12V20zM12 1V4H12V1zM4.22 4.22L6.34 6.34 7.76 4.93 5.64 2.81zM17.66 17.66L19.78 19.78 21.19 18.36 19.07 16.24zM4.93 17.76L6.34 16.34 4.22 14.22 2.81 15.64zM16.24 4.93L17.66 6.34 19.78 4.22 18.36 2.81z"/></symbol>
+  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 2-.26-1.43 2.09-3.79 3.52-6.4 3.52-4.42 0-8-3.58-8-8 0-2.61 1.43-4.97 3.52-6.4z"/></symbol>
+</svg>
+
+<div class="app-container">
+  <!-- PANEL DE CONTROLES -->
   <div class="panel">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h2>Panel de Cambios</h2>
-      <button class="theme-switch" onclick="toggleTheme()">Cambiar Tema</button>
+    <div class="panel-header">
+      <h2>Controles</h2>
+      <button class="theme-switch" id="theme-toggle" aria-label="Cambiar tema">
+        <svg class="icon"><use href="#icon-sun"></use></svg>
+      </button>
     </div>
-    <label for="cubeWidth">Anchura del Cubo (px):</label>
-    <input type="number" id="cubeWidth" value="200" min="50" max="400">
-    <input type="range" id="cubeWidthRange" value="200" min="50" max="400">
-    <br>
-    <label for="cubeHeight">Altura del Cubo (px):</label>
-    <input type="number" id="cubeHeight" value="200" min="50" max="400">
-    <input type="range" id="cubeHeightRange" value="200" min="50" max="400">
-    <br>
-    <label for="cubeColor">Color del Cubo:</label>
-    <input type="color" id="cubeColor" value="#3498db">
-    <br>
-    <label for="cubeOpacity">Opacidad del Cubo (0-1):</label>
-    <input type="number" id="cubeOpacity" value="0.7" step="0.1" min="0" max="1">
-    <input type="range" id="cubeOpacityRange" value="0.7" step="0.1" min="0" max="1">
-    <br>
-    <label for="cubeBorder">Ancho del Borde (px):</label>
-    <input type="number" id="cubeBorder" value="1" min="0" max="10">
-    <input type="range" id="cubeBorderRange" value="1" min="0" max="10">
-    <br>
-    <label for="cubeBorderRadius">Radio del Borde (px):</label>
-    <input type="number" id="cubeBorderRadius" value="10" min="0" max="50">
-    <input type="range" id="cubeBorderRadiusRange" value="10" min="0" max="50">
-    <br>
-    <label for="cubeBoxShadow">Sombra del Cubo (px):</label>
-    <input type="text" id="cubeBoxShadow" value="5px 5px 15px rgba(0, 0, 0, 0.5)">
-    <br>
-    <label for="cubeRotation">Rotación del Cubo (grados):</label>
-    <input type="number" id="cubeRotation" value="0" min="0" max="360">
-    <input type="range" id="cubeRotationRange" value="0" min="0" max="360">
-    <br>
-    <button id="generateCodeBtn" class="action-button">Generar Código</button>
+    <div class="control-group">
+      <label for="presets">Presets</label>
+      <select id="presets">
+        <option value="default">Personalizado</option>
+        <option value="card">Tarjeta Plana</option>
+        <option value="button">Botón Suave</option>
+        <option value="gel">Efecto Gel</option>
+        <option value="neumorphic">Neumorfismo</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label for="width">Ancho <span class="value-display" id="width-value">200px</span></label>
+      <input type="range" id="width" data-property="width" min="50" max="400" value="200">
+    </div>
+    <div class="control-group">
+      <label for="height">Alto <span class="value-display" id="height-value">200px</span></label>
+      <input type="range" id="height" data-property="height" min="50" max="400" value="200">
+    </div>
+    <div class="control-group">
+      <label for="backgroundColor">Color de Fondo</label>
+      <input type="color" id="backgroundColor" data-property="backgroundColor" value="#007bff">
+    </div>
+    <div class="control-group">
+      <label for="opacity">Opacidad <span class="value-display" id="opacity-value">1</span></label>
+      <input type="range" id="opacity" data-property="opacity" min="0" max="1" step="0.01" value="1">
+    </div>
+    <div class="control-group">
+      <label for="borderRadius">Radio del Borde <span class="value-display" id="borderRadius-value">10px</span></label>
+      <input type="range" id="borderRadius" data-property="borderRadius" min="0" max="100" value="10">
+    </div>
+    <div class="control-group">
+      <label for="rotate">Rotación <span class="value-display" id="rotate-value">0deg</span></label>
+      <input type="range" id="rotate" data-property="rotate" min="0" max="360" value="0">
+    </div>
+    <hr>
+    <h4>Sombra (box-shadow)</h4>
+    <div class="shadow-controls">
+      <div class="control-group">
+        <label for="shadowX">Offset X <span class="value-display" id="shadowX-value">5px</span></label>
+        <input type="range" id="shadowX" data-property="shadowX" min="-50" max="50" value="5">
+      </div>
+      <div class="control-group">
+        <label for="shadowY">Offset Y <span class="value-display" id="shadowY-value">5px</span></label>
+        <input type="range" id="shadowY" data-property="shadowY" min="-50" max="50" value="5">
+      </div>
+      <div class="control-group">
+        <label for="shadowBlur">Blur <span class="value-display" id="shadowBlur-value">15px</span></label>
+        <input type="range" id="shadowBlur" data-property="shadowBlur" min="0" max="100" value="15">
+      </div>
+      <div class="control-group">
+        <label for="shadowSpread">Spread <span class="value-display" id="shadowSpread-value">0px</span></label>
+        <input type="range" id="shadowSpread" data-property="shadowSpread" min="-50" max="50" value="0">
+      </div>
+    </div>
+    <div class="control-group">
+        <label for="shadowColor">Color Sombra</label>
+        <input type="color" id="shadowColor" data-property="shadowColor" value="#000000">
+    </div>
+    <div class="control-group">
+        <label for="shadowOpacity">Opacidad Sombra <span class="value-display" id="shadowOpacity-value">0.2</span></label>
+        <input type="range" id="shadowOpacity" data-property="shadowOpacity" min="0" max="1" step="0.01" value="0.2">
+    </div>
+    <hr>
+    <button id="reset-btn" class="action-button">
+      <svg class="icon"><use href="#icon-reset"></use></svg>
+      Reiniciar
+    </button>
   </div>
-  <div class="cube-container">
-    <div class="cube" data-size="200x200" data-border="1" data-radius="10" data-rotation="0"></div>
+
+  <!-- VISOR DEL CUBO -->
+  <div class="cube-viewport">
+    <div class="cube" id="cube"></div>
   </div>
+  
+  <!-- PANEL DE CÓDIGO -->
   <div class="code-container">
-    <h2>Código Generado</h2>
-    <pre class="code" id="generatedCode"></pre>
-    <button id="copyCodeBtn" class="action-button">Copiar Código</button>
+    <h2>Código CSS</h2>
+    <pre class="code-output" id="generatedCode"></pre>
+    <button id="copy-code-btn" class="action-button">
+      <svg class="icon" id="copy-icon"><use href="#icon-copy"></use></svg>
+      <span id="copy-text">Copiar Código</span>
+    </button>
   </div>
+
 </div>
+
 <script>
-  const cube = document.querySelector('.cube');
-  const generatedCode = document.getElementById('generatedCode');
+document.addEventListener('DOMContentLoaded', () => {
 
-  // Función para cambiar tema
-  function toggleTheme() {
-    document.documentElement.setAttribute('data-theme', 
-      document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
-    );
+  // 1. ESTADO INICIAL Y PRESETS
+  const initialState = {
+    width: 200, height: 200, backgroundColor: '#007bff', opacity: 1,
+    borderRadius: 10, rotate: 0,
+    shadowX: 5, shadowY: 5, shadowBlur: 15, shadowSpread: 0,
+    shadowColor: '#000000', shadowOpacity: 0.2
+  };
+
+  const presets = {
+    default: { ...initialState },
+    card: {
+      width: 300, height: 180, backgroundColor: '#ffffff', opacity: 1,
+      borderRadius: 8, rotate: 0,
+      shadowX: 0, shadowY: 10, shadowBlur: 20, shadowSpread: -5,
+      shadowColor: '#000000', shadowOpacity: 0.1
+    },
+    button: {
+      width: 150, height: 60, backgroundColor: '#28a745', opacity: 1,
+      borderRadius: 30, rotate: 0,
+      shadowX: 0, shadowY: 4, shadowBlur: 8, shadowSpread: 0,
+      shadowColor: '#000000', shadowOpacity: 0.25
+    },
+    gel: {
+      width: 180, height: 180, backgroundColor: '#ff416c', opacity: 0.8,
+      borderRadius: 90, rotate: 0,
+      shadowX: -10, shadowY: -10, shadowBlur: 15, shadowSpread: 5,
+      shadowColor: '#ffffff', shadowOpacity: 0.3
+    },
+    neumorphic: {
+        width: 200, height: 200, backgroundColor: '#e0e5ec', opacity: 1,
+        borderRadius: 20, rotate: 0,
+        shadowX: 9, shadowY: 9, shadowBlur: 16, shadowSpread: 0,
+        shadowColor: '#a3b1c6', shadowOpacity: 1
+    }
+  };
+
+  let state = { ...initialState };
+
+  // 2. SELECCIÓN DE ELEMENTOS DEL DOM
+  const elements = {
+    cube: document.getElementById('cube'),
+    generatedCode: document.getElementById('generatedCode'),
+    copyBtn: document.getElementById('copy-code-btn'),
+    copyText: document.getElementById('copy-text'),
+    copyIcon: document.getElementById('copy-icon'),
+    themeToggle: document.getElementById('theme-toggle'),
+    inputs: document.querySelectorAll('[data-property]'),
+    valueDisplays: {
+      width: document.getElementById('width-value'),
+      height: document.getElementById('height-value'),
+      opacity: document.getElementById('opacity-value'),
+      borderRadius: document.getElementById('borderRadius-value'),
+      rotate: document.getElementById('rotate-value'),
+      shadowX: document.getElementById('shadowX-value'),
+      shadowY: document.getElementById('shadowY-value'),
+      shadowBlur: document.getElementById('shadowBlur-value'),
+      shadowSpread: document.getElementById('shadowSpread-value'),
+      shadowOpacity: document.getElementById('shadowOpacity-value'),
+    }
+  };
+
+  // 3. FUNCIONES PRINCIPALES (RENDERIZADO Y LÓGICA)
+
+  // Convierte un color HEX a RGBA
+  const hexToRgba = (hex, alpha) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  // Actualiza toda la UI basándose en el objeto 'state'
+  function render() {
+    // Aplicar estilos al cubo
+    const shadowRgba = hexToRgba(state.shadowColor, state.shadowOpacity);
+    const neumorphicShadow = state.preset === 'neumorphic' ? `, -9px -9px 16px rgba(255,255,255,1)` : '';
+
+    elements.cube.style.width = `${state.width}px`;
+    elements.cube.style.height = `${state.height}px`;
+    elements.cube.style.backgroundColor = state.backgroundColor;
+    elements.cube.style.opacity = state.opacity;
+    elements.cube.style.borderRadius = `${state.borderRadius}px`;
+    elements.cube.style.transform = `rotate(${state.rotate}deg)`;
+    elements.cube.style.boxShadow = `${state.shadowX}px ${state.shadowY}px ${state.shadowBlur}px ${state.shadowSpread}px ${shadowRgba}${neumorphicShadow}`;
+
+    // Actualizar el texto informativo debajo del cubo
+    elements.cube.dataset.info = `
+      ${state.width}x${state.height} | ${state.borderRadius}px | ${state.rotate}°
+    `.trim().replace(/\s+/g, ' ');
+
+    // Actualizar los displays de valores
+    Object.keys(elements.valueDisplays).forEach(key => {
+        const unit = key.includes('Radius') || key.includes('width') || key.includes('height') || key.includes('shadow') ? 'px' : (key === 'rotate' ? 'deg' : '');
+        elements.valueDisplays[key].textContent = `${state[key]}${unit}`;
+    });
+
+    // Actualizar el código generado en tiempo real
+    updateGeneratedCode();
   }
-
-  // Función para actualizar los atributos del cubo
-  function updateCubeAttributes() {
-    const width = cube.style.width || '200px';
-    const height = cube.style.height || '200px';
-    const border = cube.style.borderWidth || '1px';
-    const radius = cube.style.borderRadius || '10px';
-    const rotation = cube.style.transform ? cube.style.transform.match(/\d+/) || ['0'] : ['0'];
+  
+  // Genera y muestra el código CSS
+  function updateGeneratedCode() {
+    const shadowRgba = hexToRgba(state.shadowColor, state.shadowOpacity);
+    const neumorphicShadow = state.preset === 'neumorphic' ? `, 
+    -9px -9px 16px rgba(255,255,255,1)` : '';
     
-    cube.setAttribute('data-size', `${width.replace('px','')}x${height.replace('px','')}`);
-    cube.setAttribute('data-border', border.replace('px',''));
-    cube.setAttribute('data-radius', radius.replace('px',''));
-    cube.setAttribute('data-rotation', rotation[0]);
+    const code = `
+.mi-elemento {
+  width: ${state.width}px;
+  height: ${state.height}px;
+  background-color: ${state.backgroundColor};
+  opacity: ${state.opacity};
+  border-radius: ${state.borderRadius}px;
+  transform: rotate(${state.rotate}deg);
+  box-shadow: ${state.shadowX}px ${state.shadowY}px ${state.shadowBlur}px ${state.shadowSpread}px ${shadowRgba}${neumorphicShadow};
+  transition: all 0.3s ease-in-out;
+}`;
+    elements.generatedCode.textContent = code.trim();
   }
 
-  // Función para copiar código
-  document.getElementById('copyCodeBtn').addEventListener('click', function() {
-    const code = generatedCode.textContent;
-    navigator.clipboard.writeText(code).then(() => {
-      this.textContent = '¡Código Copiado!';
+  // Actualiza los valores de los inputs (útil para presets y reset)
+  function updateInputsFromState() {
+    elements.inputs.forEach(input => {
+      const property = input.dataset.property;
+      if (state.hasOwnProperty(property)) {
+        input.value = state[property];
+      }
+    });
+    // Si se está usando un preset, actualizar el dropdown
+    document.getElementById('presets').value = state.preset || 'default';
+  }
+
+  // 4. MANEJADORES DE EVENTOS
+
+  // Manejador genérico para todos los inputs de control
+  function handleInputChange(e) {
+    const property = e.target.dataset.property;
+    let value = e.target.value;
+    if (e.target.type === 'range') {
+        value = parseFloat(value);
+    }
+    state[property] = value;
+    state.preset = 'default'; // Cualquier cambio manual desactiva el preset
+    document.getElementById('presets').value = 'default';
+    render();
+  }
+
+  // Copiar código al portapapeles
+  function copyCode() {
+    navigator.clipboard.writeText(elements.generatedCode.textContent).then(() => {
+      elements.copyText.textContent = '¡Copiado!';
+      elements.copyIcon.innerHTML = '<use href="#icon-check"></use>';
+      elements.copyBtn.classList.add('success');
       setTimeout(() => {
-        this.textContent = 'Copiar Código';
+        elements.copyText.textContent = 'Copiar Código';
+        elements.copyIcon.innerHTML = '<use href="#icon-copy"></use>';
+        elements.copyBtn.classList.remove('success');
       }, 2000);
     });
-  });
-
-  // Función para sincronizar inputs number y range
-  function syncInputs(numberInput, rangeInput) {
-    const value = numberInput.value;
-    rangeInput.value = value;
-    return value;
   }
 
-  // Anchura
-  document.getElementById('cubeWidth').addEventListener('input', function() {
-    const width = syncInputs(this, document.getElementById('cubeWidthRange'));
-    cube.style.width = `${width}px`;
-    updateCubeAttributes();
-  });
-  document.getElementById('cubeWidthRange').addEventListener('input', function() {
-    document.getElementById('cubeWidth').value = this.value;
-    cube.style.width = `${this.value}px`;
-    updateCubeAttributes();
-  });
+  // Cambiar tema
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme); // Guardar preferencia
+    elements.themeToggle.innerHTML = `<svg class="icon"><use href="#icon-${newTheme === 'dark' ? 'sun' : 'moon'}"></use></svg>`;
+  }
 
-  // Altura
-  document.getElementById('cubeHeight').addEventListener('input', function() {
-    const height = syncInputs(this, document.getElementById('cubeHeightRange'));
-    cube.style.height = `${height}px`;
-    updateCubeAttributes();
-  });
-  document.getElementById('cubeHeightRange').addEventListener('input', function() {
-    document.getElementById('cubeHeight').value = this.value;
-    cube.style.height = `${this.value}px`;
-    updateCubeAttributes();
-  });
+  // 5. INICIALIZACIÓN
 
-  // Color
-  document.getElementById('cubeColor').addEventListener('input', function() {
-    cube.style.backgroundColor = this.value;
+  // Asignar eventos
+  elements.inputs.forEach(input => input.addEventListener('input', handleInputChange));
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    state = { ...initialState };
+    state.preset = 'default';
+    updateInputsFromState();
+    render();
   });
+  document.getElementById('presets').addEventListener('change', (e) => {
+    const presetName = e.target.value;
+    state = { ...presets[presetName] };
+    state.preset = presetName; // Guardar el nombre del preset en el estado
+    updateInputsFromState();
+    render();
+  });
+  elements.copyBtn.addEventListener('click', copyCode);
+  elements.themeToggle.addEventListener('click', toggleTheme);
 
-  // Opacidad
-  document.getElementById('cubeOpacity').addEventListener('input', function() {
-    const opacity = syncInputs(this, document.getElementById('cubeOpacityRange'));
-    cube.style.opacity = opacity;
-  });
-  document.getElementById('cubeOpacityRange').addEventListener('input', function() {
-    document.getElementById('cubeOpacity').value = this.value;
-    cube.style.opacity = this.value;
-  });
+  // Cargar tema guardado
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  if (savedTheme === 'dark') {
+    toggleTheme();
+  }
 
-  // Borde
-  document.getElementById('cubeBorder').addEventListener('input', function() {
-    const border = syncInputs(this, document.getElementById('cubeBorderRange'));
-    cube.style.borderWidth = `${border}px`;
-    updateCubeAttributes();
-  });
-  document.getElementById('cubeBorderRange').addEventListener('input', function() {
-    document.getElementById('cubeBorder').value = this.value;
-    cube.style.borderWidth = `${this.value}px`;
-    updateCubeAttributes();
-  });
-
-  // Radio del borde
-  document.getElementById('cubeBorderRadius').addEventListener('input', function() {
-    const radius = syncInputs(this, document.getElementById('cubeBorderRadiusRange'));
-    cube.style.borderRadius = `${radius}px`;
-    updateCubeAttributes();
-  });
-  document.getElementById('cubeBorderRadiusRange').addEventListener('input', function() {
-    document.getElementById('cubeBorderRadius').value = this.value;
-    cube.style.borderRadius = `${this.value}px`;
-    updateCubeAttributes();
-  });
-
-  // Sombra
-  document.getElementById('cubeBoxShadow').addEventListener('input', function() {
-    cube.style.boxShadow = this.value;
-  });
-
-  // Rotación
-  document.getElementById('cubeRotation').addEventListener('input', function() {
-    const rotation = syncInputs(this, document.getElementById('cubeRotationRange'));
-    cube.style.transform = `rotate(${rotation}deg)`;
-    updateCubeAttributes();
-  });
-  document.getElementById('cubeRotationRange').addEventListener('input', function() {
-    document.getElementById('cubeRotation').value = this.value;
-    cube.style.transform = `rotate(${this.value}deg)`;
-    updateCubeAttributes();
-  });
-
-  // Generar código
-  document.getElementById('generateCodeBtn').addEventListener('click', function() {
-    const code = `
-.cube {
-  width: ${cube.style.width};
-  height: ${cube.style.height};
-  background-color: ${cube.style.backgroundColor};
-  opacity: ${cube.style.opacity};
-  border-width: ${cube.style.borderWidth};
-  border-radius: ${cube.style.borderRadius};
-  box-shadow: ${cube.style.boxShadow};
-  transform: ${cube.style.transform};
-  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-}`;
-    generatedCode.textContent = code;
-  });
-
-  // Inicializar los atributos del cubo
-  updateCubeAttributes();
+  // Renderizado inicial
+  updateInputsFromState();
+  render();
+});
 </script>
 </body>
 </html>
